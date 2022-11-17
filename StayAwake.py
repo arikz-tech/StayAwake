@@ -1,10 +1,16 @@
 import cv2
 import dlib
 
+from FatigueDetector import FatigueDetector
+from SleepDetector import SleepDetector
+
 
 class StayAwake:
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    fatigue_detector = FatigueDetector()
+    sleep_detector = SleepDetector()
+
     cap = cv2.VideoCapture(0)
 
     def run(self):
