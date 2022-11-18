@@ -16,16 +16,8 @@ class StayAwake:
     cap = cv2.VideoCapture(0)
 
     def run(self):
-        frame_cnt = 0
         EAR = [0]
-        prev_frame_time = 0
         while True:
-            new_frame_time = time.time()
-            fps = 1 / (new_frame_time - prev_frame_time)
-            prev_frame_time = new_frame_time
-            fps = int(fps)
-            fps = str(fps)
-            frame_cnt = frame_cnt + 1
             # Find haar cascade to draw bounding box around face
             ret, frame = self.cap.read()
             if not ret:
@@ -44,20 +36,21 @@ class StayAwake:
                     left_eye = []
                     right_eye = []
 
+                    # Making left eye and right eye list
                     for i in range(6):
                         left_eye.append(landmarks.part(36 + i))
                         right_eye.append(landmarks.part(42 + i))
 
+                    # Print to frame left eye and right eye
                     for i in range(36, 48):
                         x = landmarks.part(i).x
                         y = landmarks.part(i).y
                         cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
 
                     EAR.append(self.fatigue_detector.blink_detection(left_eye, right_eye))
-                    cv2.putText(frame, f"EAR:{EAR[-1]} ", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-                    cv2.putText(frame, f"fps:{fps} ", (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                    cv2.putText(frame, f"EAR:{EAR[-1]} ", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                     cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             cv2.imshow("Frame", frame)
 

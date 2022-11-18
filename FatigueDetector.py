@@ -1,4 +1,5 @@
 from scipy.spatial import distance
+import time
 
 
 class FatigueDetector:
@@ -8,6 +9,9 @@ class FatigueDetector:
     ear_threshold = 0.2
     closed_eye = False
     open_eye = False
+    close_eye_time = 0
+    open_eye_time = 0
+    blink_duration_time = 0
 
     def blink_detection(self, left_eye: list, right_eye: list):
         """
@@ -17,14 +21,21 @@ class FatigueDetector:
         left_ear = self._eye_aspect_ratio_calculate(left_eye)
         right_ear = self._eye_aspect_ratio_calculate(right_eye)
         avg_ear = (left_ear + right_ear) / 2
-        if avg_ear <= self.ear_threshold:
-            self.closed_eye = True
-        if avg_ear > self.ear_threshold + 0.05:
-            self.open_eye = True
-        if self.closed_eye and self.open_eye:
-            self.closed_eye = False
+
+        if avg_ear <= self.ear_threshold and self.closed_eye is not True:
             self.open_eye = False
-            self.blinks_per_minuets = self.blinks_per_minuets + 1
+            self.closed_eye = True
+            self.close_eye_time = time.time()
+
+        if avg_ear > self.ear_threshold and self.open_eye is not True:
+            self.open_eye = True
+            self.closed_eye = False
+            self.open_eye_time = time.time()
+
+            self.blink_duration_time = self.open_eye_time - self.close_eye_time
+
+            if 0.05 < self.blink_duration_time < 0.15:
+                self.blinks_per_minuets = self.blinks_per_minuets + 1
 
         return avg_ear
 
