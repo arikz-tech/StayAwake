@@ -1,8 +1,7 @@
+import winsound
 import cv2
 import dlib
-import matplotlib.pyplot as plt
-import time
-
+from scipy.spatial import distance
 from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
 
@@ -16,7 +15,6 @@ class StayAwake:
     cap = cv2.VideoCapture(0)
 
     def run(self):
-        EAR = [0]
         while True:
             # Find haar cascade to draw bounding box around face
             ret, frame = self.cap.read()
@@ -47,9 +45,21 @@ class StayAwake:
                         y = landmarks.part(i).y
                         cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
 
-                    EAR.append(self.fatigue_detector.blink_detection(left_eye, right_eye))
-                    cv2.putText(frame, f"EAR:{EAR[-1]} ", (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
+                    self.fatigue_detector.eyes_symptoms_classification(average_ear)
+                    self.sleep_detector.closed_eye_detection(average_ear)
+
+                    duration = 100  # milliseconds
+                    freq = 400  # Hz
+
+                    if self.sleep_detector.is_sleeping:
+                        winsound.Beep(freq, duration)
+
                     cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    cv2.putText(frame, f"Snoozes: :{self.fatigue_detector.number_of_snooze} ", (50, 100),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    cv2.putText(frame, f"Sleeping :{self.sleep_detector.is_sleeping} ", (50, 150),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             cv2.imshow("Frame", frame)
@@ -57,26 +67,32 @@ class StayAwake:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        print(EAR)
-        close_eye = False
-        blink = 0
-        for i in range(0, len(EAR) - 1):
-            if EAR[i] < 0.2:
-                if EAR[i + 1] > 0.2 or EAR[i + 2] > 0.2 or EAR[i + 3] > 0.2:
-                    blink = blink + 1
-
-        plt.plot(EAR)
-        print(blink)
-        # naming the x axis
-        plt.xlabel('x - axis')
-        # naming the y axis
-        plt.ylabel('y - axis')
-
-        # function to show the plot
-        plt.show()
-        self.cap.release()
-        new_frame_time = time.time()
-
-        # Calculating the fps
-
         cv2.destroyAllWindows()
+
+
+    def _eye_aspect_ratio(self, eye_points):
+        """
+        :param eye_points:
+        :return:
+        """
+        p1 = [eye_points[0].x, eye_points[0].y]
+        p2 = [eye_points[1].x, eye_points[1].y]
+        p3 = [eye_points[2].x, eye_points[2].y]
+        p4 = [eye_points[3].x, eye_points[3].y]
+        p5 = [eye_points[4].x, eye_points[4].y]
+        p6 = [eye_points[5].x, eye_points[5].y]
+        AL = distance.euclidean(p2, p6)
+        BL = distance.euclidean(p3, p5)
+        CL = distance.euclidean(p1, p4)
+        EAR = (AL + BL) / (2 * CL)
+        return EAR
+
+    def _eye_average_aspect_ratio(self, left_eye, right_eye):
+        # Calculate left eye aspect ratio and right eye aspect ratio, in order to determine if the eye is open or closed
+        left_ear = self._eye_aspect_ratio(left_eye)
+        right_ear = self._eye_aspect_ratio(right_eye)
+
+        # Average eye aspect ratio of both eyes
+        avg_ear = (left_ear + right_ear) / 2
+
+        return avg_ear
