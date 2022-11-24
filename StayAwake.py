@@ -33,19 +33,24 @@ class StayAwake:
                     landmarks = self.predictor(gray, face)
                     left_eye = []
                     right_eye = []
+                    mouth = []
+
+                    # Making left eye and right eye list
+                    for i in range(48, 60):
+                        mouth.append(landmarks.part(i))
 
                     # Making left eye and right eye list
                     for i in range(6):
                         left_eye.append(landmarks.part(36 + i))
                         right_eye.append(landmarks.part(42 + i))
 
-                    # Print to frame left eye and right eye
-                    for i in range(36, 48):
-                        x = landmarks.part(i).x
-                        y = landmarks.part(i).y
-                        cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+                    self.printFacePart(mouth, frame, (0, 0, 255))
+                    self.printFacePart(left_eye, frame, (0, 255, 0))
+                    self.printFacePart(right_eye, frame, (0, 255, 0))
 
                     average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
+
+                    # mar = self.mouth_aspect_ratio(mouth)
                     self.fatigue_detector.eyes_symptoms_classification(average_ear)
                     self.sleep_detector.closed_eye_detection(average_ear)
 
@@ -54,6 +59,8 @@ class StayAwake:
 
                     if self.sleep_detector.is_sleeping:
                         winsound.Beep(freq, duration)
+
+                    self.fatigue_detector.drowsiness_detection()
 
                     cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
@@ -68,7 +75,6 @@ class StayAwake:
                 break
 
         cv2.destroyAllWindows()
-
 
     def _eye_aspect_ratio(self, eye_points):
         """
@@ -96,3 +102,12 @@ class StayAwake:
         avg_ear = (left_ear + right_ear) / 2
 
         return avg_ear
+
+    def mouth_aspect_ratio(self, mouth):
+        pass
+
+    def printFacePart(self, part, frame, color):
+        for dot in part:
+            x = dot.x
+            y = dot.y
+            cv2.circle(frame, (x, y), 1, color, -1)

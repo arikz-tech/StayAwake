@@ -5,8 +5,12 @@ class FatigueDetector:
     blinks_per_minuets = 0
     numbers_of_yaws = 0
     number_of_snooze = 0
+    time_window = 0
+    starting_time_window = 0
+    drowsy_indicator = 0
     ear_threshold = 0.2
     closed_eye = False
+    isDrowsy = False
     close_eye_time = 0
     open_eye_time = 0
 
@@ -53,3 +57,24 @@ class FatigueDetector:
         :return:
         """
 
+
+
+    def drowsiness_detection(self):
+        """
+        :return:
+        """
+        if self.time_window > 10:
+            print(f"Drowsy indicator: {self.drowsy_indicator}")
+            self.blinks_per_minuets = 0
+            self.starting_time_window = 0
+            self.number_of_snooze = 0
+            self.numbers_of_yaws = 0
+
+        if self.starting_time_window == 0:
+            self.starting_time_window = time.time()
+
+        self.time_window = time.time() - self.starting_time_window
+
+        self.drowsy_indicator = ((self.blinks_per_minuets / 4) / 3) + \
+                                (self.numbers_of_yaws / 3) + \
+                                (self.number_of_snooze / 3)
