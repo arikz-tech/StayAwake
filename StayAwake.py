@@ -7,7 +7,6 @@ from SleepDetector import SleepDetector
 
 
 class StayAwake:
-
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
     fatigue_detector = FatigueDetector()
@@ -37,7 +36,7 @@ class StayAwake:
                     mouth = []
 
                     # Making mouth points list
-                    for i in range(48, 60):
+                    for i in range(48, 68):
                         mouth.append(landmarks.part(i))
 
                     # Making left eye and right eye points list
@@ -52,7 +51,7 @@ class StayAwake:
                     average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
 
                     mar = self._mouth_aspect_ratio(mouth)
-                    print(mar)
+                    #print(mar)
                     self.fatigue_detector.eyes_symptoms_classification(average_ear)
                     self.sleep_detector.closed_eye_detection(average_ear)
 
@@ -60,7 +59,7 @@ class StayAwake:
                     freq = 400  # Hz
 
                     if self.sleep_detector.is_sleeping:
-                        print("Fall asleep")
+                        #print("Fall asleep")
                         winsound.Beep(freq, duration)
 
                     self.fatigue_detector.drowsiness_detection()
@@ -110,9 +109,26 @@ class StayAwake:
         p12 = [mouth_points[5].x, mouth_points[5].y]
         p13 = [mouth_points[6].x, mouth_points[6].y]
         p14 = [mouth_points[7].x, mouth_points[7].y]
-        mar = (distance.euclidean(p14, p8) + distance.euclidean(p13, p9) + distance.euclidean(p12, p10)) / 3 * (
+
+        p15 = [mouth_points[8].x, mouth_points[8].y]
+        p16 = [mouth_points[9].x, mouth_points[9].y]
+        p17 = [mouth_points[10].x, mouth_points[10].y]
+        p18 = [mouth_points[11].x, mouth_points[11].y]
+        p19 = [mouth_points[12].x, mouth_points[12].y]
+        p20 = [mouth_points[13].x, mouth_points[13].y]
+        p21 = [mouth_points[14].x, mouth_points[14].y]
+        p22 = [mouth_points[15].x, mouth_points[15].y]
+
+        # the mar that calculated from the out-lips points
+        outside_mar = (distance.euclidean(p14, p8) + distance.euclidean(p13, p9) + distance.euclidean(p12, p10)) / 3 * (
             distance.euclidean(p11, p7))
-        return mar
+
+        # the mar that calculated from the in-lips points
+        inside_mar = (distance.euclidean(p22, p16) + distance.euclidean(p21, p17) + distance.euclidean(p20, p18)) / (
+                3 * distance.euclidean(p19, p15))
+
+        avg_mar = inside_mar + outside_mar / 2
+        return avg_mar
 
     def _eye_average_aspect_ratio(self, left_eye, right_eye):
         # Calculate left eye aspect ratio and right eye aspect ratio, in order to determine if the eye is open or closed
