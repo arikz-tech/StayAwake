@@ -57,8 +57,6 @@ class FatigueDetector:
         :return:
         """
 
-
-
     def drowsiness_detection(self):
         """
         :return:
