@@ -58,6 +58,7 @@ class StayAwake:
                     freq = 400  # Hz
 
                     if self.sleep_detector.is_sleeping:
+                        print("Fall asleep")
                         winsound.Beep(freq, duration)
 
                     self.fatigue_detector.drowsiness_detection()
