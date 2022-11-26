@@ -63,11 +63,11 @@ class StayAwake:
                     self.fatigue_detector.drowsiness_detection()
 
                     cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
                     cv2.putText(frame, f"Snoozes: :{self.fatigue_detector.number_of_snooze} ", (50, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
                     cv2.putText(frame, f"Sleeping :{self.sleep_detector.is_sleeping} ", (50, 150),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 
             cv2.imshow("Frame", frame)
 
