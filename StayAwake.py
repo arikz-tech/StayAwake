@@ -36,7 +36,7 @@ class StayAwake:
                     mouth = []
 
                     # Making mouth points list
-                    for i in range(48, 68):
+                    for i in range(60, 68):
                         mouth.append(landmarks.part(i))
 
                     # Making left eye and right eye points list
@@ -44,34 +44,40 @@ class StayAwake:
                         left_eye.append(landmarks.part(36 + i))
                         right_eye.append(landmarks.part(42 + i))
 
-                    self._printFacePart(mouth, frame, (0, 0, 255))
-                    self._printFacePart(left_eye, frame, (0, 255, 0))
-                    self._printFacePart(right_eye, frame, (0, 255, 0))
+                    self._print_face_part(mouth, frame, (0, 255, 0))
+                    self._print_face_part(left_eye, frame, (0, 255, 0))
+                    self._print_face_part(right_eye, frame, (0, 255, 0))
 
                     average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
+                    average_mar = self._mouth_aspect_ratio(mouth)
 
-                    mar = self._mouth_aspect_ratio(mouth)
-                    #print(mar)
                     self.fatigue_detector.eyes_symptoms_classification(average_ear)
+                    self.fatigue_detector.mouth_symptoms_classification(average_mar)
+
                     self.sleep_detector.closed_eye_detection(average_ear)
 
                     duration = 100  # milliseconds
                     freq = 400  # Hz
 
                     if self.sleep_detector.is_sleeping:
-                        #print("Fall asleep")
+                        # print("Fall asleep")
                         winsound.Beep(freq, duration)
 
                     self.fatigue_detector.drowsiness_detection()
 
                     cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                     cv2.putText(frame, f"Snoozes: :{self.fatigue_detector.number_of_snooze} ", (50, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-                    cv2.putText(frame, f"Sleeping :{self.sleep_detector.is_sleeping} ", (50, 150),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    # cv2.putText(frame, f"Sleeping :{self.sleep_detector.is_sleeping} ", (50, 150),
+                    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                    cv2.putText(frame, f"yawing :{self.fatigue_detector.numbers_of_yaws} ", (50, 150),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
-            cv2.imshow("Frame", frame)
+                    if self.fatigue_detector.drowsy_indicator > 10:
+                        print("hello man you are tired")
+
+            cv2.imshow("Frame", frame,)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -110,25 +116,11 @@ class StayAwake:
         p13 = [mouth_points[6].x, mouth_points[6].y]
         p14 = [mouth_points[7].x, mouth_points[7].y]
 
-        p15 = [mouth_points[8].x, mouth_points[8].y]
-        p16 = [mouth_points[9].x, mouth_points[9].y]
-        p17 = [mouth_points[10].x, mouth_points[10].y]
-        p18 = [mouth_points[11].x, mouth_points[11].y]
-        p19 = [mouth_points[12].x, mouth_points[12].y]
-        p20 = [mouth_points[13].x, mouth_points[13].y]
-        p21 = [mouth_points[14].x, mouth_points[14].y]
-        p22 = [mouth_points[15].x, mouth_points[15].y]
-
         # the mar that calculated from the out-lips points
-        outside_mar = (distance.euclidean(p14, p8) + distance.euclidean(p13, p9) + distance.euclidean(p12, p10)) / 3 * (
-            distance.euclidean(p11, p7))
+        mar = (distance.euclidean(p14, p8) + distance.euclidean(p13, p9) + distance.euclidean(p12, p10)) / (3 * (
+            distance.euclidean(p11, p7)))
 
-        # the mar that calculated from the in-lips points
-        inside_mar = (distance.euclidean(p22, p16) + distance.euclidean(p21, p17) + distance.euclidean(p20, p18)) / (
-                3 * distance.euclidean(p19, p15))
-
-        avg_mar = inside_mar + outside_mar / 2
-        return avg_mar
+        return mar
 
     def _eye_average_aspect_ratio(self, left_eye, right_eye):
         # Calculate left eye aspect ratio and right eye aspect ratio, in order to determine if the eye is open or closed
@@ -140,7 +132,7 @@ class StayAwake:
 
         return avg_ear
 
-    def _printFacePart(self, part, frame, color):
+    def _print_face_part(self, part, frame, color):
         for dot in part:
             x = dot.x
             y = dot.y

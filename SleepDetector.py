@@ -4,7 +4,7 @@ import time
 class SleepDetector:
     closed_eye = False
     is_sleeping = False
-    ear_threshold = 0.25
+    ear_threshold = 0.22
     closed_eye_time = 0
     closed_eye_duration = 0
 

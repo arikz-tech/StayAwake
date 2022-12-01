@@ -5,14 +5,20 @@ class FatigueDetector:
     blinks_per_minuets = 0
     numbers_of_yaws = 0
     number_of_snooze = 0
-    time_window = 0
+    time_window_seconds = 0
+    time_window_minutes = 0
     starting_time_window = 0
     drowsy_indicator = 0
-    ear_threshold = 0.2
+    ear_threshold = 0.21
+    mar_threshold = 0.2
     closed_eye = False
+    open_mouth = False
     isDrowsy = False
     close_eye_time = 0
     open_eye_time = 0
+    close_mouth_time = 0
+    open_mouth_time = 0
+    blinking_hazard = 0
 
     def eyes_symptoms_classification(self, ear):
         """
@@ -38,12 +44,30 @@ class FatigueDetector:
             self._blink_detection(blink_duration_time)
             self._snooze_detection(blink_duration_time)
 
+    def mouth_symptoms_classification(self, mar):
+        """
+
+        :return:
+        """
+        if mar > self.mar_threshold and self.open_mouth is not True:
+            self.open_mouth = True
+            self.open_mouth_time = time.time()
+
+        if mar < self.mar_threshold and self.open_mouth is True:
+            self.open_mouth = False
+            self.close_mouth_time = time.time()
+            yaw_duration_time = self.close_mouth_time - self.open_mouth_time
+
+            self.yawning_detection(yaw_duration_time)
+
     def _blink_detection(self, blink_duration):
         """
         :return:
         """
         if 0.02 < blink_duration < 0.3:
             self.blinks_per_minuets += 1
+        if self.blinks_per_minuets > 25:
+            self.blinking_hazard += 1
 
     def _snooze_detection(self, blink_duration):
         """
@@ -52,27 +76,35 @@ class FatigueDetector:
         if 0.3 < blink_duration < 1:
             self.number_of_snooze += 1
 
-    def yawning_detection(self, mouth):
+    def yawning_detection(self, yaw_duration):
         """
         :return:
         """
+        if 0.3 < yaw_duration:
+            self.numbers_of_yaws += 1
 
     def drowsiness_detection(self):
         """
         :return:
         """
-        if self.time_window > 10:
-            print(f"Drowsy indicator: {self.drowsy_indicator}")
+        if self.time_window_seconds > 60:
+            print(f"blinks per minutes: {self.blinks_per_minuets}")
             self.blinks_per_minuets = 0
+            self.time_window_minutes += 1
             self.starting_time_window = 0
+            self.time_window_seconds = 0
+
+        if self.time_window_minutes >= 5:
+            self.drowsy_indicator = self.blinking_hazard*0.8 + self.numbers_of_yaws*0.8 + self.number_of_snooze*0.8
+            self.blinking_hazard = 0
             self.number_of_snooze = 0
             self.numbers_of_yaws = 0
+            self.time_window_minutes = 0
+            print(f"Drowsy 5 minutes indicator: {self.drowsy_indicator}")
 
         if self.starting_time_window == 0:
             self.starting_time_window = time.time()
 
-        self.time_window = time.time() - self.starting_time_window
+        self.time_window_seconds = time.time() - self.starting_time_window
 
-        self.drowsy_indicator = ((self.blinks_per_minuets / 4) / 3) + \
-                                (self.numbers_of_yaws / 3) + \
-                                (self.number_of_snooze / 3)
+
