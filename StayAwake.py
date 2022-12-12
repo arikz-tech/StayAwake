@@ -4,6 +4,40 @@ import dlib
 from scipy.spatial import distance
 from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
+from tkinter import *
+from PIL import Image, ImageTk
+
+root = Tk()
+root.geometry("800x540")
+root.configure(bg="#00171F")
+Label(root, text="StayAwake System", font=("times new roman", 30, "bold"), bg="#00171F", fg="white").pack()
+
+blink_label = Label(root, text="Blinks", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+blink_label.pack()
+blink_label.place(relx=0.35, rely=0.5, anchor='center')
+
+snooze_label = Label(root, text="Snooze", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+snooze_label.pack()
+snooze_label.place(relx=0.35, rely=0.55, anchor='center')
+
+yawning_label = Label(root, text="Yawning", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+yawning_label.pack()
+yawning_label.place(relx=0.35, rely=0.6, anchor='center')
+
+
+label_frame = LabelFrame(root, bg="white")
+label_frame.pack()
+label_frame.place(relx=0.7, rely=0.6, anchor='center')
+
+displayed_label_frame = Label(label_frame, bg="white", width=400, height=400)
+displayed_label_frame.pack()
+root.bind('<Escape>', lambda e: close_win(e))
+cap = cv2.VideoCapture(0)
+
+
+def close_win(e):
+    root.destroy()
+    cap.release()
 
 
 class StayAwake:
@@ -12,16 +46,15 @@ class StayAwake:
     fatigue_detector = FatigueDetector()
     sleep_detector = SleepDetector()
 
-    cap = cv2.VideoCapture(0)
-
     def run(self):
         while True:
             # Find haar cascade to draw bounding box around face
-            ret, frame = self.cap.read()
+            ret, frame = cap.read()
             if not ret:
                 break
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
+            image = ImageTk.PhotoImage(Image.fromarray(frame))
+            displayed_label_frame['image'] = image
             faces = self.detector(gray)
             if faces:
                 for face in faces:
@@ -65,24 +98,15 @@ class StayAwake:
 
                     self.fatigue_detector.drowsiness_detection()
 
-                    cv2.putText(frame, f"Blinks:{self.fatigue_detector.blinks_per_minuets} ", (50, 50),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                    cv2.putText(frame, f"Snoozes: :{self.fatigue_detector.number_of_snooze} ", (50, 100),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-                    # cv2.putText(frame, f"Sleeping :{self.sleep_detector.is_sleeping} ", (50, 150),
-                    #             cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-                    cv2.putText(frame, f"yawing :{self.fatigue_detector.numbers_of_yaws} ", (50, 150),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                    blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
+                    snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
+                    yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
 
                     if self.fatigue_detector.drowsy_indicator > 10:
                         print("hello man you are tired")
+            root.update()
 
-            cv2.imshow("Frame", frame,)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        cv2.destroyAllWindows()
 
     def _eye_aspect_ratio(self, eye_points):
         """
