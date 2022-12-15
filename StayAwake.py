@@ -5,35 +5,51 @@ from scipy.spatial import distance
 from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
 from tkinter import *
+from tkinter import ttk
 from PIL import Image, ImageTk
 
+raspberry_pi_resolution = "800x480"
+background_color = "#00171F"
+
 root = Tk()
-root.geometry("800x540")
-root.configure(bg="#00171F")
-Label(root, text="StayAwake System", font=("times new roman", 30, "bold"), bg="#00171F", fg="white").pack()
+root.geometry(raspberry_pi_resolution)
+root.configure(bg=background_color)
+Label(root, text="StayAwake System", font=("times new roman", 30, "bold"), bg=background_color, fg="white").pack()
 
-blink_label = Label(root, text="Blinks", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+blink_label = Label(root, text="Blinks", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
 blink_label.pack()
-blink_label.place(relx=0.35, rely=0.5, anchor='center')
+blink_label.place(relx=0.58, rely=0.2, anchor='center')
 
-snooze_label = Label(root, text="Snooze", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+snooze_label = Label(root, text="Snooze", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
 snooze_label.pack()
-snooze_label.place(relx=0.35, rely=0.55, anchor='center')
+snooze_label.place(relx=0.75, rely=0.2, anchor='center')
 
-yawning_label = Label(root, text="Yawning", font=("times new roman", 15, "bold"), bg="#00171F", fg="white")
+yawning_label = Label(root, text="Yawning", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
 yawning_label.pack()
-yawning_label.place(relx=0.35, rely=0.6, anchor='center')
+yawning_label.place(relx=0.925, rely=0.2, anchor='center')
 
-
-label_frame = LabelFrame(root, bg="white")
+label_frame = LabelFrame(root)
 label_frame.pack()
-label_frame.place(relx=0.7, rely=0.6, anchor='center')
+label_frame.place(relx=0.75, rely=0.6, anchor='center')
 
-displayed_label_frame = Label(label_frame, bg="white", width=400, height=400)
+fatigue_level_label = Label(root, text="Fatigue Level", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
+fatigue_level_label.pack()
+fatigue_level_label.place(relx=0.25, rely=0.89, anchor='center')
+
+progress_bar = ttk.Progressbar(
+    root,
+    orient='horizontal',
+    mode='indeterminate',
+    length=350
+)
+progress_bar.pack()
+progress_bar.place(relx=0.25, rely=0.95, anchor='center')
+
+displayed_label_frame = Label(label_frame, width=350, height=350)
 displayed_label_frame.pack()
+
 root.bind('<Escape>', lambda e: close_win(e))
 cap = cv2.VideoCapture(0)
-
 
 def close_win(e):
     root.destroy()
@@ -53,8 +69,7 @@ class StayAwake:
             if not ret:
                 break
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            image = ImageTk.PhotoImage(Image.fromarray(frame))
-            displayed_label_frame['image'] = image
+
             faces = self.detector(gray)
             if faces:
                 for face in faces:
@@ -62,7 +77,7 @@ class StayAwake:
                     y1 = face.top()
                     x2 = face.right()
                     y2 = face.bottom()
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    # cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     landmarks = self.predictor(gray, face)
                     left_eye = []
                     right_eye = []
@@ -77,9 +92,9 @@ class StayAwake:
                         left_eye.append(landmarks.part(36 + i))
                         right_eye.append(landmarks.part(42 + i))
 
-                    self._print_face_part(mouth, frame, (0, 255, 0))
-                    self._print_face_part(left_eye, frame, (0, 255, 0))
-                    self._print_face_part(right_eye, frame, (0, 255, 0))
+                    self._add_face_part_dots(mouth, frame, (0, 255, 0))
+                    self._add_face_part_dots(left_eye, frame, (0, 255, 0))
+                    self._add_face_part_dots(right_eye, frame, (0, 255, 0))
 
                     average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
                     average_mar = self._mouth_aspect_ratio(mouth)
@@ -104,8 +119,14 @@ class StayAwake:
 
                     if self.fatigue_detector.drowsy_indicator > 10:
                         print("hello man you are tired")
-            root.update()
 
+            # display the frame on the tkinter GUI
+            blue, green, red = cv2.split(frame)
+            img = cv2.merge((red, green, blue))
+            im = Image.fromarray(img)
+            image = ImageTk.PhotoImage(image=im)
+            displayed_label_frame['image'] = image
+            root.update()
 
 
     def _eye_aspect_ratio(self, eye_points):
@@ -156,7 +177,7 @@ class StayAwake:
 
         return avg_ear
 
-    def _print_face_part(self, part, frame, color):
+    def _add_face_part_dots(self, part, frame, color):
         for dot in part:
             x = dot.x
             y = dot.y
