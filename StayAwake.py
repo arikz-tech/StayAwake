@@ -4,68 +4,24 @@ import dlib
 from scipy.spatial import distance
 from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
-from tkinter import *
-from tkinter import ttk
 from PIL import Image, ImageTk
-
-raspberry_pi_resolution = "800x480"
-background_color = "#00171F"
-
-root = Tk()
-root.geometry(raspberry_pi_resolution)
-root.configure(bg=background_color)
-Label(root, text="StayAwake System", font=("times new roman", 30, "bold"), bg=background_color, fg="white").pack()
-
-blink_label = Label(root, text="Blinks", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
-blink_label.pack()
-blink_label.place(relx=0.58, rely=0.2, anchor='center')
-
-snooze_label = Label(root, text="Snooze", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
-snooze_label.pack()
-snooze_label.place(relx=0.75, rely=0.2, anchor='center')
-
-yawning_label = Label(root, text="Yawning", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
-yawning_label.pack()
-yawning_label.place(relx=0.925, rely=0.2, anchor='center')
-
-label_frame = LabelFrame(root)
-label_frame.pack()
-label_frame.place(relx=0.75, rely=0.6, anchor='center')
-
-fatigue_level_label = Label(root, text="Fatigue Level", font=("times new roman", 15, "bold"), bg=background_color, fg="white")
-fatigue_level_label.pack()
-fatigue_level_label.place(relx=0.25, rely=0.89, anchor='center')
-
-progress_bar = ttk.Progressbar(
-    root,
-    orient='horizontal',
-    mode='indeterminate',
-    length=350
-)
-progress_bar.pack()
-progress_bar.place(relx=0.25, rely=0.95, anchor='center')
-
-displayed_label_frame = Label(label_frame, width=350, height=350)
-displayed_label_frame.pack()
-
-root.bind('<Escape>', lambda e: close_win(e))
-cap = cv2.VideoCapture(0)
-
-def close_win(e):
-    root.destroy()
-    cap.release()
-
+from StayAwakeUI import StayAwakeUI
 
 class StayAwake:
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-    fatigue_detector = FatigueDetector()
-    sleep_detector = SleepDetector()
+
+    def __init__(self):
+        self.detector = dlib.get_frontal_face_detector()
+        self.predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+        self.fatigue_detector = FatigueDetector()
+        self.sleep_detector = SleepDetector()
+        self.app = StayAwakeUI()
+        self.cap = cv2.VideoCapture(0)
+        self.app.root.bind('<Escape>', lambda e: self.close_win(e))
 
     def run(self):
         while True:
             # Find haar cascade to draw bounding box around face
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if not ret:
                 break
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -73,11 +29,6 @@ class StayAwake:
             faces = self.detector(gray)
             if faces:
                 for face in faces:
-                    x1 = face.left()
-                    y1 = face.top()
-                    x2 = face.right()
-                    y2 = face.bottom()
-                    # cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     landmarks = self.predictor(gray, face)
                     left_eye = []
                     right_eye = []
@@ -113,9 +64,9 @@ class StayAwake:
 
                     self.fatigue_detector.drowsiness_detection()
 
-                    blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
-                    snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
-                    yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
+                    self.app.blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
+                    self.app.snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
+                    self.app.yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
 
                     if self.fatigue_detector.drowsy_indicator > 10:
                         print("hello man you are tired")
@@ -125,9 +76,8 @@ class StayAwake:
             img = cv2.merge((red, green, blue))
             im = Image.fromarray(img)
             image = ImageTk.PhotoImage(image=im)
-            displayed_label_frame['image'] = image
-            root.update()
-
+            self.app.displayed_label_frame['image'] = image
+            self.app.root.update()
 
     def _eye_aspect_ratio(self, eye_points):
         """
@@ -182,3 +132,7 @@ class StayAwake:
             x = dot.x
             y = dot.y
             cv2.circle(frame, (x, y), 1, color, -1)
+
+    def close_win(self, e):
+        self.app.root.destroy()
+        self.cap.release()
