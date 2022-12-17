@@ -19,6 +19,8 @@ class FatigueDetector:
     close_mouth_time = 0
     open_mouth_time = 0
     blinking_hazard = 0
+    drowsy_level = 0  # 1-5
+    start_voice_flag = False
 
     def eyes_symptoms_classification(self, ear):
         """
@@ -94,17 +96,18 @@ class FatigueDetector:
             self.starting_time_window = 0
             self.time_window_seconds = 0
 
-        if self.time_window_minutes >= 5:
-            self.drowsy_indicator = self.blinking_hazard*0.8 + self.numbers_of_yaws*0.8 + self.number_of_snooze*0.8
+        if self.time_window_minutes >= 1:
+            self.drowsy_indicator = self.blinking_hazard * 0.8 + self.numbers_of_yaws * 0.8 + self.number_of_snooze * 0.8
+            if self.drowsy_indicator > 10:
+                self.drowsy_level += 1
             self.blinking_hazard = 0
             self.number_of_snooze = 0
             self.numbers_of_yaws = 0
             self.time_window_minutes = 0
+            self.start_voice_flag = True
             print(f"Drowsy 5 minutes indicator: {self.drowsy_indicator}")
 
         if self.starting_time_window == 0:
             self.starting_time_window = time.time()
 
         self.time_window_seconds = time.time() - self.starting_time_window
-
-

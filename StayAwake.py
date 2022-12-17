@@ -6,6 +6,9 @@ from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
 from PIL import Image, ImageTk
 from StayAwakeUI import StayAwakeUI
+import pyttsx3
+import threading
+
 
 class StayAwake:
 
@@ -17,6 +20,7 @@ class StayAwake:
         self.app = StayAwakeUI()
         self.cap = cv2.VideoCapture(0)
         self.app.root.bind('<Escape>', lambda e: self.close_win(e))
+        self.engine = pyttsx3.init()
 
     def run(self):
         while True:
@@ -58,18 +62,43 @@ class StayAwake:
                     duration = 100  # milliseconds
                     freq = 400  # Hz
 
-                    if self.sleep_detector.is_sleeping:
-                        # print("Fall asleep")
-                        winsound.Beep(freq, duration)
+                    # if self.sleep_detector.is_sleeping:
+                    #     # print("Fall asleep")
+                    #     winsound.Beep(freq, duration)
 
                     self.fatigue_detector.drowsiness_detection()
 
+                    self.app.progress_bar['value'] = (self.fatigue_detector.drowsy_level / 5) * 100
+
+                    if self.fatigue_detector.drowsy_level == 1 and self.fatigue_detector.start_voice_flag:
+                        fatigue_text = "Hey, you seem to be a little tired, please take a break"
+                        self.app.fatigue_description_label['text'] = fatigue_text
+                        self.text_to_voice(fatigue_text)
+
+                    elif self.fatigue_detector.drowsy_level == 2 and self.fatigue_detector.start_voice_flag:
+                        fatigue_text = "Hey,again Fuck You Wake Up !!!!!!!"
+                        self.app.fatigue_description_label['text'] = fatigue_text
+                        self.text_to_voice(fatigue_text)
+
+                    elif self.fatigue_detector.drowsy_level == 3 and self.fatigue_detector.start_voice_flag:
+                        fatigue_text = ""
+                        self.app.fatigue_description_label['text'] = fatigue_text
+                        self.text_to_voice(fatigue_text)
+
+                    elif self.fatigue_detector.drowsy_level == 4 and self.fatigue_detector.start_voice_flag:
+                        fatigue_text = ""
+                        self.app.fatigue_description_label['text'] = fatigue_text
+                        self.text_to_voice(fatigue_text)
+
+                    elif self.fatigue_detector.drowsy_level == 5 and self.fatigue_detector.start_voice_flag:
+                        fatigue_text = ""
+                        self.app.fatigue_description_label['text'] = fatigue_text
+                        self.text_to_voice(fatigue_text)
+
+                    self.fatigue_detector.start_voice_flag = False
                     self.app.blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
                     self.app.snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
                     self.app.yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
-
-                    if self.fatigue_detector.drowsy_indicator > 10:
-                        print("hello man you are tired")
 
             # display the frame on the tkinter GUI
             blue, green, red = cv2.split(frame)
@@ -136,3 +165,12 @@ class StayAwake:
     def close_win(self, e):
         self.app.root.destroy()
         self.cap.release()
+
+    def text_to_voice(self, text):
+        threading.Thread(
+            target=self.run_pyttsx3, args=(text,), daemon=True
+        ).start()
+
+    def run_pyttsx3(self, text):
+        self.engine.say(text)
+        self.engine.runAndWait()
