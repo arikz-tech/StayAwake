@@ -4,6 +4,7 @@ import dlib
 from scipy.spatial import distance
 from FatigueDetector import FatigueDetector
 from SleepDetector import SleepDetector
+from stayawake_matrices import Matrices
 from PIL import Image, ImageTk
 from StayAwakeUI import StayAwakeUI
 from imutils import face_utils
@@ -11,43 +12,6 @@ import numpy as np
 
 import pyttsx3
 import threading
-
-
-K = [6.5308391993466671e+002, 0.0, 3.1950000000000000e+002,
-     0.0, 6.5308391993466671e+002, 2.3950000000000000e+002,
-     0.0, 0.0, 1.0]
-D = [7.0834633684407095e-002, 6.9140193737175351e-002, 0.0, 0.0, -1.3073460323689292e+000]
-
-cam_matrix = np.array(K).reshape(3, 3).astype(np.float32)
-dist_coeffs = np.array(D).reshape(5, 1).astype(np.float32)
-
-object_pts = np.float32([[6.825897, 6.760612, 4.402142],
-                         [1.330353, 7.122144, 6.903745],
-                         [-1.330353, 7.122144, 6.903745],
-                         [-6.825897, 6.760612, 4.402142],
-                         [5.311432, 5.485328, 3.987654],
-                         [1.789930, 5.393625, 4.413414],
-                         [-1.789930, 5.393625, 4.413414],
-                         [-5.311432, 5.485328, 3.987654],
-                         [2.005628, 1.409845, 6.165652],
-                         [-2.005628, 1.409845, 6.165652],
-                         [2.774015, -2.080775, 5.048531],
-                         [-2.774015, -2.080775, 5.048531],
-                         [0.000000, -3.116408, 6.097667],
-                         [0.000000, -7.415691, 4.070434]])
-
-reprojectsrc = np.float32([[10.0, 10.0, 10.0],
-                           [10.0, 10.0, -10.0],
-                           [10.0, -10.0, -10.0],
-                           [10.0, -10.0, 10.0],
-                           [-10.0, 10.0, 10.0],
-                           [-10.0, 10.0, -10.0],
-                           [-10.0, -10.0, -10.0],
-                           [-10.0, -10.0, 10.0]])
-
-line_pairs = [[0, 1], [1, 2], [2, 3], [3, 0],
-              [4, 5], [5, 6], [6, 7], [7, 4],
-              [0, 4], [1, 5], [2, 6], [3, 7]]
 
 
 class StayAwake:
@@ -73,81 +37,59 @@ class StayAwake:
 
             faces = self.detector(gray)
             if faces:
-                for face in faces:
-                    landmarks = self.predictor(gray, face)
-                    left_eye = []
-                    right_eye = []
-                    mouth = []
+                driver_face = self.get_driver_face(faces)
+                landmarks = self.predictor(gray, driver_face)
 
-                    # Making mouth points list
-                    for i in range(60, 68):
-                        mouth.append(landmarks.part(i))
+                x1 = driver_face.left()
+                y1 = driver_face.top()
+                x2 = driver_face.right()
+                y2 = driver_face.bottom()
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                left_eye = []
+                right_eye = []
+                mouth = []
 
-                    # Making left eye and right eye points list
-                    for i in range(6):
-                        left_eye.append(landmarks.part(36 + i))
-                        right_eye.append(landmarks.part(42 + i))
+                # Making mouth points list
+                for i in range(60, 68):
+                    mouth.append(landmarks.part(i))
 
-                    self._add_face_part_dots(mouth, frame, (0, 255, 0))
-                    self._add_face_part_dots(left_eye, frame, (0, 255, 0))
-                    self._add_face_part_dots(right_eye, frame, (0, 255, 0))
+                # Making left eye and right eye points list
+                for i in range(6):
+                    left_eye.append(landmarks.part(36 + i))
+                    right_eye.append(landmarks.part(42 + i))
 
-                    average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
-                    average_mar = self._mouth_aspect_ratio(mouth)
+                self._add_face_part_dots(mouth, frame, (0, 255, 0))
+                self._add_face_part_dots(left_eye, frame, (0, 255, 0))
+                self._add_face_part_dots(right_eye, frame, (0, 255, 0))
 
-                    self.fatigue_detector.eyes_symptoms_classification(average_ear)
-                    self.fatigue_detector.mouth_symptoms_classification(average_mar)
+                average_ear = self._eye_average_aspect_ratio(left_eye, right_eye)
+                average_mar = self._mouth_aspect_ratio(mouth)
 
-                    self.sleep_detector.closed_eye_detection(average_ear)
+                self.fatigue_detector.eyes_symptoms_classification(average_ear)
+                self.fatigue_detector.mouth_symptoms_classification(average_mar)
 
-                    shape = face_utils.shape_to_np(landmarks)
+                self.sleep_detector.closed_eye_detection(average_ear)
 
-                    reprojectdst, euler_angle = self.get_head_pose(shape)
-                    angele_x = euler_angle[0, 0]
-                    angele_y = euler_angle[1, 0]
-                    angele_z = euler_angle[2, 0]
+                shape = face_utils.shape_to_np(landmarks)
 
-                    self.app.fatigue_description_label['text'] = "X: " + "{:7.2f}".format(angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
-                    duration = 100  # milliseconds
-                    freq = 400  # Hz
+                reprojectdst, euler_angle = self.get_head_pose(shape)
+                angele_x = euler_angle[0, 0]
+                angele_y = euler_angle[1, 0]
+                angele_z = euler_angle[2, 0]
 
-                    # if self.sleep_detector.is_sleeping:
-                    #     # print("Fall asleep")
-                    #     winsound.Beep(freq, duration)
+                self.app.fatigue_description_label['text'] = "X: " + "{:7.2f}".format(
+                    angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
 
-                    self.fatigue_detector.drowsiness_detection()
+                self.fatigue_detector.drowsiness_detection()
 
-                    self.app.progress_bar['value'] = (self.fatigue_detector.drowsy_level / 5) * 100
+                self.app.progress_bar['value'] = (self.fatigue_detector.drowsy_level / 5) * 100
 
-                    if self.fatigue_detector.drowsy_level == 1 and self.fatigue_detector.start_voice_flag:
-                        fatigue_text = "Hey, you seem to be a little tired, please take a break"
-                        self.app.fatigue_description_label['text'] = fatigue_text
-                        self.text_to_voice(fatigue_text)
+                self.show_and_sound_fatigue_description()
 
-                    elif self.fatigue_detector.drowsy_level == 2 and self.fatigue_detector.start_voice_flag:
-                        fatigue_text = "Hey,again Fuck You Wake Up !!!!!!!"
-                        self.app.fatigue_description_label['text'] = fatigue_text
-                        self.text_to_voice(fatigue_text)
-
-                    elif self.fatigue_detector.drowsy_level == 3 and self.fatigue_detector.start_voice_flag:
-                        fatigue_text = ""
-                        self.app.fatigue_description_label['text'] = fatigue_text
-                        self.text_to_voice(fatigue_text)
-
-                    elif self.fatigue_detector.drowsy_level == 4 and self.fatigue_detector.start_voice_flag:
-                        fatigue_text = ""
-                        self.app.fatigue_description_label['text'] = fatigue_text
-                        self.text_to_voice(fatigue_text)
-
-                    elif self.fatigue_detector.drowsy_level == 5 and self.fatigue_detector.start_voice_flag:
-                        fatigue_text = ""
-                        self.app.fatigue_description_label['text'] = fatigue_text
-                        self.text_to_voice(fatigue_text)
-
-                    self.fatigue_detector.start_voice_flag = False
-                    self.app.blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
-                    self.app.snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
-                    self.app.yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
+                self.fatigue_detector.start_voice_flag = False
+                self.app.blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
+                self.app.snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
+                self.app.yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
 
             # display the frame on the tkinter GUI
             blue, green, red = cv2.split(frame)
@@ -156,6 +98,51 @@ class StayAwake:
             image = ImageTk.PhotoImage(image=im)
             self.app.displayed_label_frame['image'] = image
             self.app.root.update()
+
+    def get_driver_face(self, faces):
+        max_per = 0
+        driver_face = 0
+        driver_frame=0
+        for face in faces:
+            x1 = face.left()
+            y1 = face.top()
+            x2 = face.right()
+            y2 = face.bottom()
+            width = x2 - x1
+            height = y2 - y1
+            perimeter = 2 * (width + height)
+            if perimeter > max_per:
+                max_per = perimeter
+                driver_face = face
+
+
+        return driver_face
+
+    def show_and_sound_fatigue_description(self):
+        if self.fatigue_detector.drowsy_level == 1 and self.fatigue_detector.start_voice_flag:
+            fatigue_text = "Hey, you seem to be a little tired, please take a break"
+            self.app.fatigue_description_label['text'] = fatigue_text
+            self.text_to_voice(fatigue_text)
+
+        elif self.fatigue_detector.drowsy_level == 2 and self.fatigue_detector.start_voice_flag:
+            fatigue_text = "Hey,again Fuck You Wake Up !!!!!!!"
+            self.app.fatigue_description_label['text'] = fatigue_text
+            self.text_to_voice(fatigue_text)
+
+        elif self.fatigue_detector.drowsy_level == 3 and self.fatigue_detector.start_voice_flag:
+            fatigue_text = ""
+            self.app.fatigue_description_label['text'] = fatigue_text
+            self.text_to_voice(fatigue_text)
+
+        elif self.fatigue_detector.drowsy_level == 4 and self.fatigue_detector.start_voice_flag:
+            fatigue_text = ""
+            self.app.fatigue_description_label['text'] = fatigue_text
+            self.text_to_voice(fatigue_text)
+
+        elif self.fatigue_detector.drowsy_level == 5 and self.fatigue_detector.start_voice_flag:
+            fatigue_text = ""
+            self.app.fatigue_description_label['text'] = fatigue_text
+            self.text_to_voice(fatigue_text)
 
     def _eye_aspect_ratio(self, eye_points):
         """
@@ -229,10 +216,11 @@ class StayAwake:
                                 shape[39], shape[42], shape[45], shape[31], shape[35],
                                 shape[48], shape[54], shape[57], shape[8]])
 
-        _, rotation_vec, translation_vec = cv2.solvePnP(object_pts, image_pts, cam_matrix, dist_coeffs)
+        _, rotation_vec, translation_vec = cv2.solvePnP(Matrices.object_pts, image_pts, Matrices.cam_matrix,
+                                                        Matrices.dist_coeffs)
 
-        reprojectdst, _ = cv2.projectPoints(reprojectsrc, rotation_vec, translation_vec, cam_matrix,
-                                            dist_coeffs)
+        reprojectdst, _ = cv2.projectPoints(Matrices.reprojectsrc, rotation_vec, translation_vec, Matrices.cam_matrix,
+                                            Matrices.dist_coeffs)
 
         reprojectdst = tuple(map(tuple, reprojectdst.reshape(8, 2)))
 
