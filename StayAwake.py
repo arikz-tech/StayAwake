@@ -9,6 +9,8 @@ from PIL import Image, ImageTk
 from StayAwakeUI import StayAwakeUI
 from imutils import face_utils
 import numpy as np
+from playsound import playsound
+import time
 
 import pyttsx3
 import threading
@@ -25,9 +27,11 @@ class StayAwake:
         self.cap = cv2.VideoCapture(0)
         self.app.root.bind('<Escape>', lambda e: self.close_win(e))
         self.engine = pyttsx3.init()
+        self.sleeping_time = 0
 
     def run(self):
         while True:
+
             # Find haar cascade to draw bounding box around face
             ret, frame = self.cap.read()
             if not ret:
@@ -37,14 +41,9 @@ class StayAwake:
 
             faces = self.detector(gray)
             if faces:
-                driver_face = self.get_driver_face(faces)
+                driver_face = self.get_driver_face(faces, frame)
                 landmarks = self.predictor(gray, driver_face)
 
-                x1 = driver_face.left()
-                y1 = driver_face.top()
-                x2 = driver_face.right()
-                y2 = driver_face.bottom()
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 left_eye = []
                 right_eye = []
                 mouth = []
@@ -89,7 +88,16 @@ class StayAwake:
                 self.fatigue_detector.start_voice_flag = False
                 self.app.blink_label['text'] = f"Blinks:{self.fatigue_detector.blinks_per_minuets} "
                 self.app.snooze_label['text'] = f"Snoozes: :{self.fatigue_detector.number_of_snooze} "
-                self.app.yawning_label['text'] = f"yawing :{self.fatigue_detector.numbers_of_yaws} "
+                self.app.yawning_label['text'] = f"Yawing :{self.fatigue_detector.numbers_of_yaws} "
+                curr_time=time.time()
+                diff = curr_time - self.sleeping_time
+                if self.sleep_detector.is_sleeping and diff > 10:
+                    self.sleeping_time=time.time()
+                    threading.Thread(
+                        target=self.play_alram_sound, daemon=True
+                    ).start()
+
+
 
             # display the frame on the tkinter GUI
             blue, green, red = cv2.split(frame)
@@ -99,10 +107,10 @@ class StayAwake:
             self.app.displayed_label_frame['image'] = image
             self.app.root.update()
 
-    def get_driver_face(self, faces):
+    def get_driver_face(self, faces, frame):
         max_per = 0
         driver_face = 0
-        driver_frame=0
+        driver_frame = 0
         for face in faces:
             x1 = face.left()
             y1 = face.top()
@@ -114,8 +122,6 @@ class StayAwake:
             if perimeter > max_per:
                 max_per = perimeter
                 driver_face = face
-
-
         return driver_face
 
     def show_and_sound_fatigue_description(self):
@@ -125,22 +131,22 @@ class StayAwake:
             self.text_to_voice(fatigue_text)
 
         elif self.fatigue_detector.drowsy_level == 2 and self.fatigue_detector.start_voice_flag:
-            fatigue_text = "Hey,again Fuck You Wake Up !!!!!!!"
+            fatigue_text = "Hey again, please take a break"
             self.app.fatigue_description_label['text'] = fatigue_text
             self.text_to_voice(fatigue_text)
 
         elif self.fatigue_detector.drowsy_level == 3 and self.fatigue_detector.start_voice_flag:
-            fatigue_text = ""
+            fatigue_text = "Sorry to interrupt you but i think you should take a rest "
             self.app.fatigue_description_label['text'] = fatigue_text
             self.text_to_voice(fatigue_text)
 
         elif self.fatigue_detector.drowsy_level == 4 and self.fatigue_detector.start_voice_flag:
-            fatigue_text = ""
+            fatigue_text = "Please take a break, The system detected that you are too tired to drive"
             self.app.fatigue_description_label['text'] = fatigue_text
             self.text_to_voice(fatigue_text)
 
         elif self.fatigue_detector.drowsy_level == 5 and self.fatigue_detector.start_voice_flag:
-            fatigue_text = ""
+            fatigue_text = "Seriously, i suggest you to stop the car immediately you are tired!"
             self.app.fatigue_description_label['text'] = fatigue_text
             self.text_to_voice(fatigue_text)
 
@@ -206,6 +212,9 @@ class StayAwake:
         threading.Thread(
             target=self.run_pyttsx3, args=(text,), daemon=True
         ).start()
+
+    def play_alram_sound(self):
+        playsound('mixkit-classic-alarm-995.wav')
 
     def run_pyttsx3(self, text):
         self.engine.say(text)
