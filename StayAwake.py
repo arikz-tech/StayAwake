@@ -76,8 +76,10 @@ class StayAwake:
                 angele_y = euler_angle[1, 0]
                 angele_z = euler_angle[2, 0]
 
-                self.app.fatigue_description_label['text'] = "X: " + "{:7.2f}".format(
-                    angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
+                self.sleep_detector.falling_head_detection(angele_x, angele_y, angele_z)
+
+                # self.app.fatigue_description_label['text'] = "X: " + "{:7.2f}".format(
+                #     angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
 
                 self.fatigue_detector.drowsiness_detection()
 

@@ -28,9 +28,16 @@ class SleepDetector:
                 self.is_sleeping = True
 
 
-
-    def falling_head_detection(self):
+    def falling_head_detection(self,angle_x, angle_y, angle_z):
         """
 
         :return:
         """
+        if angle_x > 12:
+            self.is_sleeping = True
+
+        if angle_z > 20:
+            self.is_sleeping = True
+
+        if angle_z < -20:
+            self.is_sleeping = True
