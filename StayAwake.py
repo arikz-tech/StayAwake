@@ -11,7 +11,6 @@ from imutils import face_utils
 import numpy as np
 from playsound import playsound
 import time
-
 import pyttsx3
 import threading
 
@@ -78,8 +77,8 @@ class StayAwake:
 
                 self.sleep_detector.falling_head_detection(angele_x, angele_y, angele_z)
 
-                # self.app.fatigue_description_label['text'] = "X: " + "{:7.2f}".format(
-                #     angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
+                self.app.face_angle_label['text'] = "X: " + "{:7.2f}".format(
+                     angele_x) + " Y: " + "{:7.2f}".format(angele_y) + " Z: " + "{:7.2f}".format(angele_z)
 
                 self.fatigue_detector.drowsiness_detection()
 
@@ -98,8 +97,6 @@ class StayAwake:
                     threading.Thread(
                         target=self.play_alram_sound, daemon=True
                     ).start()
-
-
 
             # display the frame on the tkinter GUI
             blue, green, red = cv2.split(frame)
@@ -216,7 +213,7 @@ class StayAwake:
         ).start()
 
     def play_alram_sound(self):
-        playsound('mixkit-classic-alarm-995.wav')
+        playsound('sleep_alarm.mp3')
 
     def run_pyttsx3(self, text):
         self.engine.say(text)
