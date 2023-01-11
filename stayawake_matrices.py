@@ -1,8 +1,9 @@
 import numpy as np
 
+
 class Matrices:
     """
-    matrices class
+    Matrices class
     """
     K = [6.5308391993466671e+002, 0.0, 3.1950000000000000e+002,
          0.0, 6.5308391993466671e+002, 2.3950000000000000e+002,
