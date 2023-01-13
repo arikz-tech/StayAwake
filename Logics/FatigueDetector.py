@@ -3,8 +3,6 @@ import time
 
 class FatigueDetector:
 
-
-
     def __init__(self):
         """
         FatigueDetector constructor

@@ -2,11 +2,11 @@ import winsound
 import cv2
 import dlib
 from scipy.spatial import distance
-from FatigueDetector import FatigueDetector
-from SleepDetector import SleepDetector
-from stayawake_matrices import Matrices
+from Logics.FatigueDetector import FatigueDetector
+from Logics.SleepDetector import SleepDetector
+from Logics.stayawake_matrices import Matrices
 from PIL import Image, ImageTk
-from StayAwakeUI import StayAwakeUI
+from GUI.StayAwakeUI import StayAwakeUI
 from imutils import face_utils
 import numpy as np
 from playsound import playsound
@@ -25,7 +25,7 @@ class StayAwake:
         StayAwake Class constructor
         """
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+        self.predictor = dlib.shape_predictor("Logics/shape_predictor_68_face_landmarks.dat")
         self.fatigue_detector = FatigueDetector()
         self.sleep_detector = SleepDetector()
         self.app = StayAwakeUI()
@@ -261,7 +261,7 @@ class StayAwake:
         Description: Sound an alarm
         :return:
         """
-        playsound('sleep_alarm_wav.wav')
+        playsound('GUI/Sounds/sleep_alarm.wav')
 
     def run_pyttsx3(self, text):
         """
