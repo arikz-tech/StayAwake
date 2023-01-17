@@ -14,7 +14,7 @@ class FatigueDetector:
         self.time_window_minutes = 0
         self.starting_time_window = 0
         self.drowsy_indicator = 0
-        self.ear_threshold = 0.18
+        self.ear_threshold = 0.19
         self.mar_threshold = 0.2
         self.closed_eye = False
         self.open_mouth = False
