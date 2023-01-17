@@ -14,7 +14,7 @@ class FatigueDetector:
         self.time_window_minutes = 0
         self.starting_time_window = 0
         self.drowsy_indicator = 0
-        self.ear_threshold = 0.21
+        self.ear_threshold = 0.18
         self.mar_threshold = 0.2
         self.closed_eye = False
         self.open_mouth = False
@@ -78,7 +78,7 @@ class FatigueDetector:
         :return:
         """
 
-        if 0.02 < blink_duration < 0.3:
+        if 0.05 < blink_duration < 0.15:
             self.blinks_per_minuets += 1
         if self.blinks_per_minuets > 25:
             self.blinking_hazard += 1
@@ -89,7 +89,7 @@ class FatigueDetector:
         :param blink_duration:
         :return:
         """
-        if 0.3 < blink_duration < 0.9:
+        if 0.15 < blink_duration < 0.9:
             self.number_of_snooze += 1
 
     def yawning_detection(self, yaw_duration):
@@ -114,15 +114,17 @@ class FatigueDetector:
             self.time_window_seconds = 0
 
         if self.time_window_minutes >= 1:
-            self.drowsy_indicator = self.blinking_hazard * 0.8 + self.numbers_of_yaws * 0.8 + self.number_of_snooze * 0.8
-            if self.drowsy_indicator > 10:
-                self.drowsy_level += 1
+            self.drowsy_indicator = self.blinking_hazard * 0.5 + self.numbers_of_yaws * 0.8 + self.number_of_snooze * 0.8
             self.blinking_hazard = 0
             self.number_of_snooze = 0
             self.numbers_of_yaws = 0
             self.time_window_minutes = 0
             self.start_voice_flag = True
             print(f"Drowsy 5 minutes indicator: {self.drowsy_indicator}")
+            if self.drowsy_indicator >= 10:
+                self.drowsy_level += 1
+            elif self.drowsy_level > 0:
+                self.drowsy_level -= 1
 
         if self.starting_time_window == 0:
             self.starting_time_window = time.time()
