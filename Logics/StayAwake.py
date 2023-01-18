@@ -33,6 +33,7 @@ class StayAwake:
         self.app.root.bind('<Escape>', lambda e: self.close_win(e))
         self.engine = pyttsx3.init()
         self.sleeping_time = 0
+        self.frame_count=0
 
     def run(self):
         """
@@ -40,7 +41,7 @@ class StayAwake:
         :return:
         """
         while True:
-
+            self.frame_count+=1
             # Find haar cascade to draw bounding box around face
             ret, frame = self.cap.read()
             if not ret:
@@ -107,6 +108,15 @@ class StayAwake:
                     threading.Thread(
                         target=self.play_alram_sound, daemon=True
                     ).start()
+
+            else:
+                if self.frame_count>100:
+                    print("no face")
+                    threading.Thread(
+                        target=self.play_alram_sound, daemon=True
+                    ).start()
+                    self.frame_count=0
+
 
             # display the frame on the tkinter GUI
             blue, green, red = cv2.split(frame)

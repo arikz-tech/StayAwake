@@ -78,7 +78,7 @@ class FatigueDetector:
         :return:
         """
 
-        if 0.05 < blink_duration < 0.15:
+        if 0.05 < blink_duration < 0.24:
             self.blinks_per_minuets += 1
         if self.blinks_per_minuets > 25:
             self.blinking_hazard += 1
@@ -89,7 +89,7 @@ class FatigueDetector:
         :param blink_duration:
         :return:
         """
-        if 0.15 < blink_duration < 0.9:
+        if 0.25 < blink_duration < 0.8:
             self.number_of_snooze += 1
 
     def yawning_detection(self, yaw_duration):
