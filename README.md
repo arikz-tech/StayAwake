@@ -29,4 +29,4 @@ Software requirements:
 ## Screenshots
 
 ![First App Screenshot](https://github.com/arikz-tech/StayAwake/blob/master/Blink.gif)
-![Second App Screenshot](https://github.com/arikz-tech/StayAwake/blob/master/Blink.gif)
+![Second App Screenshot](https://github.com/arikz-tech/StayAwake/blob/master/Yawing.gif)
