@@ -35,7 +35,7 @@ class SleepDetector:
             keeping_eye_closed_time = time.time()
             eye_closed_duration = keeping_eye_closed_time - self.closed_eye_time
 
-            if eye_closed_duration > 0.8:
+            if eye_closed_duration > 0.5:
                 self.is_sleeping = True
 
 
@@ -51,8 +51,8 @@ class SleepDetector:
         if angle_x > 12:
             self.is_sleeping = True
 
-        if angle_z > 20:
+        if angle_z > 15:
             self.is_sleeping = True
 
-        if angle_z < -20:
+        if angle_z < -15:
             self.is_sleeping = True

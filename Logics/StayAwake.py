@@ -245,7 +245,7 @@ class StayAwake:
         for dot in part:
             x = dot.x
             y = dot.y
-            cv2.circle(frame, (x, y), 1, color, -1)
+            cv2.circle(frame, (x, y), 2, color, -1)
 
     def close_win(self, e):
         """
